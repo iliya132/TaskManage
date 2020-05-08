@@ -1,0 +1,245 @@
+﻿<Window xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"  x:Class="TaskManager.View.NewTaskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskManager.View" xmlns:local1="clr-namespace:TaskManager.View.Converters" xmlns:controls="clr-namespace:TasksDK.View.Controls"
+        mc:Ignorable="d"
+        Title="Новая задача" Height="850" MaxWidth="800" Width="800" WindowStyle="ToolWindow" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="LabelFont" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#404040"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="16px"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="10,10,0,0"/>
+        </Style>
+        <Style x:Key="DatePickerFont" TargetType="DatePicker">
+            <Setter Property="Foreground" Value="#404040"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="16px"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style x:Key="InputText" TargetType="TextBox">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="18px"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="InputComboBox" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="18px"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style x:Key="InputHintText" TargetType="controls:HintTextBox">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="18px"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="HelpText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFBFBFBF"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="12px"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+        </Style>
+        <local1:WidthConverter x:Key="WidthConverter"/>
+    </Window.Resources>
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <Grid Background="#FFF2F2F2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="130"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+        <Image Source="/TasksDK;component/Resources/img/Header.png" Stretch="Fill"/>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Grid.Row="1" DataContext="{Binding Source={StaticResource Locator}, Path=Main}">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="210"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+
+                <!--Названия полей-->
+                <TextBlock Text="1. Название задачи*:" Style="{DynamicResource LabelFont}" Grid.Row="0"/>
+                <TextBlock Text="2. Ожидаемый результат*:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="1"/>
+                <TextBlock Text="3. Описание:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="2"/>
+                <TextBlock Text="4. Инициатор*:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="3"/>
+                <TextBlock Text="5. Ответственные*:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="4"/>
+                <TextBlock Text="6. Измеритель*:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="5"/>
+                <TextBlock Text="7. Процессы:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="6"/>
+                <TextBlock Text="8. Сроки*:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="7"/>
+                <TextBlock Text="9. Родительская задача:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="8"/>
+                <TextBlock Text="10. Вес цели:" Style="{DynamicResource LabelFont}" TextWrapping="WrapWithOverflow" Grid.Row="9"/>
+
+                <!--Поля ввода-->
+                <!--Название задачи-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="0">
+                    <TextBox Name="TaskName" 
+                             Width="500" 
+                             Style="{DynamicResource InputText}"
+                             Text="{Binding CurrentlyEditedTask.Name}"/>
+                    <TextBlock Name="TaskNameLabel" 
+                               Text="Полное название задачи" 
+                               Style="{DynamicResource HelpText}"
+                               />
+                </StackPanel>
+
+                <!--Ожидаемый результат-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="1">
+                    <TextBox Name="AwaitedResult" 
+                             Width="500" 
+                             Style="{DynamicResource InputText}"
+                             Text="{Binding CurrentlyEditedTask.AwaitedResult}"/>
+                    <TextBlock Name="AwaitedResultLabel" Text="Результат от выполнения данной задачи" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Комментарий-->
+                <StackPanel  Margin="0,10,0,0" Grid.Column="1" Grid.Row="2">
+                    <TextBox Name="CommentToTask" Width="500" 
+                             TextWrapping="Wrap"
+                             AcceptsTab="True"
+                             AcceptsReturn="True"
+                             Style="{DynamicResource InputText}"
+                             MinHeight="100"
+                             Text="{Binding CurrentlyEditedTask.Comment}"/>
+                    <TextBlock Name="CommentToTaskLabel" Text="Подробное описание данной задачи" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Инициатор-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="3">
+                    <controls:HintTextBox x:Name="Reporter" Width="500" 
+                                          ItemsSource="{Binding SubordinatedEmployeesNames, Mode=OneWay}"
+                                          IgnoreTextChange="True"
+                             Style="{DynamicResource InputHintText}"
+                            Text="{Binding AddedTaskReporterFIO, Mode=TwoWay}"/>
+                    <TextBlock Name="ReporterLabel" Text="Сотрудник, поставивший задачу" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+                <!--Ответственные сотрудники-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="4">
+                    <xctk:CheckComboBox Name="Assignee"
+                                        ItemsSource="{Binding SubordinatedEmployees}"
+                                        Width="500"
+                                        Foreground="Black"
+                                        FontFamily="Georgia"
+                                        FontSize="18px"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Left"
+                                        DisplayMemberPath="Name"
+                                        SelectedItemsOverride="{Binding AddFormSelectedAnalytics, Mode=TwoWay}"
+                                        Text="{Binding AddedTaskAssigneeFIO, Mode=TwoWay}"/>
+                    
+                    <controls:HintTextBox x:Name="AssigneeSingle"
+                                          Width="500" 
+                                          ItemsSource="{Binding SubordinatedEmployeesNames, Mode=OneWay}"
+                                          IgnoreTextChange="True"
+                                          Style="{DynamicResource InputHintText}"
+                                          Visibility="Collapsed"
+                                          Text="{Binding AddedTaskAssigneeFIO, Mode=TwoWay}"/>
+
+
+                    <TextBlock Name="AssigneeLabel" Text="Ответственные за выполнение сотрудники" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Измеритель-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="5">
+                    <TextBox Name="Metric" 
+                             Width="500" 
+                             Style="{DynamicResource InputText}"
+                             Text="{Binding CurrentlyEditedTask.Meter}"/>
+                    <TextBlock Name="MetricLabel" Text="Что является измерителем для данной задачи" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Процессы-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="6">
+                    <StackPanel Orientation="Horizontal">
+                        <xctk:CheckComboBox Name="Processes" Width="500"
+                                            ItemsSource="{Binding AllProcesses}"
+                                            Foreground="Black"
+                                            FontFamily="Georgia"
+                                            FontSize="18px"
+                                            Margin="10,0,0,0"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Left"
+                                            SelectedItemsOverride="{Binding AddFormSelectedProcesses, Mode=TwoWay}">
+                           
+                            
+                        </xctk:CheckComboBox>
+
+                    </StackPanel>
+                    <TextBlock Name="ProcessesLabel" Text="Какие процессы имеют отношение к данной задаче?" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Сроки-->
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="7">
+                    <StackPanel Margin="0,10,10,0">
+                        <DatePicker Name="CreationDate" 
+                                    MinWidth="150" 
+                                    Margin="10,0,0,0" 
+                                    FirstDayOfWeek="Monday"
+                                    
+                                    SelectedDate="{Binding CurrentlyEditedTask.CreationDate, Mode=TwoWay}" Style="{DynamicResource DatePickerFont}"/>
+                        <TextBlock Name="CreationDateLabel" Text="Дата создания задачи" Style="{DynamicResource HelpText}"/>
+                    </StackPanel>
+                    <StackPanel Margin="10,10,0,0">
+                        <DatePicker Name="DueDate" 
+                                    MinWidth="150" 
+                                    Margin="10,0,0,0"
+                                    SelectedDate="{Binding CurrentlyEditedTask.DueDate, Mode=TwoWay}" Style="{DynamicResource DatePickerFont}"/>
+                        <TextBlock Name="DueDateLabel" Text="Срок завершения задачи" Style="{DynamicResource HelpText}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!--Родительская задача-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="8">
+                    <ComboBox Style="{DynamicResource InputComboBox}" 
+                              Width="500" 
+                              SelectedItem="{Binding CurrentlyEditedTask.ParentTask, Mode=TwoWay}"
+                              ItemsSource="{Binding AddFormAvailableParentTasks}"/>
+                    <TextBlock Name="ParentTaskLabel" Text="Какая задача является родительской для данной задачи" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--вес цели-->
+                <StackPanel Margin="0,10,0,0" Grid.Column="1" Grid.Row="9">
+                    <StackPanel Orientation="Horizontal">
+                        <Slider Name="WeightSlider" Interval="100" Width="450" HorizontalAlignment="Left" Margin="10,0,0,0"
+                                Value="{Binding CurrentlyEditedTask.Weight}" Maximum="100" Minimum="1" LargeChange="0" AutoToolTipPlacement="TopLeft" IsEnabled="False"/>
+                        <TextBlock Text="{Binding ElementName=WeightSlider, Path=Value}" Width="50" Style="{DynamicResource LabelFont}" VerticalAlignment="Center" TextAlignment="Center"
+                                   Margin="0"/>
+                    </StackPanel>
+                    <TextBlock Name="WeightLabel" Text="Укажите вес цели от 1 до 100" Style="{DynamicResource HelpText}"/>
+                </StackPanel>
+
+                <!--Завершение-->
+                <StackPanel Orientation="Horizontal" Margin="10,30,10,10" HorizontalAlignment="Right" Grid.Column="1" Grid.Row="10">
+                    <Button Name="Ok_Button" Width="100" Height="40" HorizontalAlignment="Center" Content="ОК" Background="#FF79E062" Margin="10" IsDefault="True" Click="Ok_Button_Click"/>
+                    <Button Name="Cancel_Button" Width="100" Height="40" HorizontalAlignment="Center" Content="Отмена" Background="#FFCFD4CE" Margin="10" IsCancel="True"/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+    </ScrollViewer>
+</Window>
