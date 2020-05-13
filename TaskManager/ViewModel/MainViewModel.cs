@@ -591,7 +591,7 @@ namespace TaskManager.ViewModel
                     Weight = CurrentlyEditedTask.Weight,
                     ChildTasks = new ObservableCollection<TaskEntity>()
                 };
-                if (newHeadTask.ParentTask == _nullTask) newHeadTask.ParentTask = null;
+                
                 if (AddFormSelectedAnalytics.Count > 1)
                 {
                     //Для каждого выбранного ответственного создается новая подзадача
@@ -620,11 +620,12 @@ namespace TaskManager.ViewModel
                 {
                     newHeadTask.Assignee = AddFormSelectedAnalytics[0];
                 }
-
+                if (newHeadTask.ParentTask == _nullTask) newHeadTask.ParentTask = null;
                 _taskContext.Tasks.Add(newHeadTask);
                 _taskContext.SaveChanges();
+                if (newHeadTask.ParentTask == null) newHeadTask.ParentTask = _nullTask;
                 RaisePropertyChanged(nameof(CurrentlyShownTask));
-                if (newHeadTask.ParentTask.Name.Equals(_nullTask.Name))
+                if (newHeadTask.ParentTask != null && newHeadTask.ParentTask.Name.Equals(_nullTask.Name))
                 {
                     CurrentlyShownTask.ChildTasks.Add(newHeadTask);
                 }

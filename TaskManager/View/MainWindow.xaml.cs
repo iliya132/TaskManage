@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TaskManager.Model.Entities;
 using TaskManager.Services;
+using System.Configuration;
 
 namespace TaskManager
 {
@@ -124,15 +126,50 @@ namespace TaskManager
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            UpdateService.CheckForUpdate();
-            if (File.Exists("updated.txt"))
+            if (!IsUpdateAvailable())
             {
-                File.Delete("updated.txt");
-                HelpButton_Click(null, null);
+                MessageBox.Show("Приложению не удалось проверить наличие обновлений. Обратитесь к разработчику.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            UpdateService.CheckForUpdate();
+
+            if (IsUpdateFileExist())
+            {
+                DeleteUpdateFile();
+                ShowHelpFile(null, null);
             }
         }
 
-        private void HelpButton_Click(object sender, RoutedEventArgs e)
+        private bool IsUpdateAvailable()
+        {
+            if (Properties.Settings.Default.HomeWorking)
+            {
+                return false;
+            }
+
+            if(!Directory.Exists(@"\\moscow\hdfs\WORK\Архив необычных операций\ОРППА\Programs\Tasks\TasksDK.exe"))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private bool IsUpdateFileExist()
+        {
+            if (File.Exists("updated.txt"))
+            {
+                return true;
+            } 
+            return false;
+        }
+
+        private void DeleteUpdateFile()
+        {
+            File.Delete("updated.txt");
+        }
+
+        private void ShowHelpFile(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists($"{Environment.ExpandEnvironmentVariables("%appdata%")}\\TasksDK"))
             {
