@@ -7,6 +7,7 @@ namespace TaskManager.Model.Entities
     {
         public int ProcessId { get; set; }
         public int EmployeeTask_Id { get; set; }
+
         [ForeignKey("EmployeeTask_Id")]
         public virtual TaskEntity ParentTask { get; set; }
     }

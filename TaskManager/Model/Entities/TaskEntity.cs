@@ -16,7 +16,6 @@ namespace TaskManager.Model.Entities
         }
         public List<ProcessProxy> Processes { get; set; }
         public virtual TaskEntity ParentTask { get; set; }
-
         public virtual ObservableCollection<TaskEntity> ChildTasks { get; set; }
         public List<int> ProcessIds { get; set; }
         public DateTime CreationDate { get; set; }
@@ -29,18 +28,19 @@ namespace TaskManager.Model.Entities
         public string EmployeeComment { get; set; }
         public string SupervisorComment { get; set; }
         public int EmployeeDonePercent { get; set; }
+        public string AwaitedResult { get; set; }
+        public string Meter { get; set; }
         private int _supervisorDonePercent;
         public int SupervisorDonePercent
         {
-
             get
             {
                 int donePercent = 0;
                 if (ChildTasks.Count > 0)
                 {
-                    foreach (TaskEntity _subtask in ChildTasks)
+                    foreach (TaskEntity subtask in ChildTasks)
                     {
-                        donePercent += _subtask.SupervisorDonePercent;
+                        donePercent += subtask.SupervisorDonePercent;
                     }
                     return donePercent / ChildTasks.Count;
                 }
@@ -56,9 +56,7 @@ namespace TaskManager.Model.Entities
                 OnPropertyChanged(nameof(SupervisorDonePercent));
             }
         }
-        public string AwaitedResult { get; set; }
-        public string Meter { get; set; }
-
+        
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string Property)
         {

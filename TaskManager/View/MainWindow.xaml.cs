@@ -126,13 +126,7 @@ namespace TaskManager
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!IsUpdateAvailable())
-            {
-                MessageBox.Show("Приложению не удалось проверить наличие обновлений. Обратитесь к разработчику.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            UpdateService.CheckForUpdate();
+            UpdateService.UpdateIfNewer();
 
             if (IsUpdateFileExist())
             {
@@ -141,19 +135,6 @@ namespace TaskManager
             }
         }
 
-        private bool IsUpdateAvailable()
-        {
-            if (Properties.Settings.Default.HomeWorking)
-            {
-                return false;
-            }
-
-            if(!Directory.Exists(@"\\moscow\hdfs\WORK\Архив необычных операций\ОРППА\Programs\Tasks\TasksDK.exe"))
-            {
-                return false;
-            }
-            return true;
-        }
 
         private bool IsUpdateFileExist()
         {

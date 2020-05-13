@@ -26,12 +26,12 @@ namespace TaskManager.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool HomeWorking {
+        public bool IsWorkingAtHome {
             get {
-                return ((bool)(this["HomeWorking"]));
+                return ((bool)(this["IsWorkingAtHome"]));
             }
             set {
-                this["HomeWorking"] = value;
+                this["IsWorkingAtHome"] = value;
             }
         }
     }

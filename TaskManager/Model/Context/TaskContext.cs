@@ -1,9 +1,6 @@
 namespace TaskManager.Model.Context
 {
-    using System;
     using System.Data.Entity;
-    using System.Diagnostics;
-    using System.Linq;
     using TaskManager.Model.Entities;
 
     public class TaskContext : DbContext
