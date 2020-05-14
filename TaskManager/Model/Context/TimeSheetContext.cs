@@ -11,6 +11,7 @@ namespace TaskManager.Model.Context
         }
 
         public DbSet<Departments> Departments { get; set; }
+        public DbSet<Block> Blocks { get; set; }
         public DbSet<Directions> DirectionsSet { get; set; }
         public DbSet<Otdel> OtdelSet { get; set; }
         public DbSet<Positions> PositionsSet { get; set; }

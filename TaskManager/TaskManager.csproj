@@ -134,10 +134,12 @@
     <Compile Include="Model\Base\NamedEntity.cs" />
     <Compile Include="Model\Context\TaskContext.cs" />
     <Compile Include="Model\Context\TimeSheetContext.cs" />
+    <Compile Include="Model\Entities\BlockProxy.cs" />
     <Compile Include="Model\Entities\Employee.cs" />
     <Compile Include="Model\Entities\ProcessProxy.cs" />
     <Compile Include="Model\Entities\TaskEntity.cs" />
     <Compile Include="Model\Entities\TimeSheet\Analytic.cs" />
+    <Compile Include="Model\Entities\TimeSheet\Block.cs" />
     <Compile Include="Model\Entities\TimeSheet\Departments.cs" />
     <Compile Include="Model\Entities\TimeSheet\Directions.cs" />
     <Compile Include="Model\Entities\TimeSheet\Otdel.cs" />
@@ -145,12 +147,16 @@
     <Compile Include="Model\Entities\TimeSheet\Process.cs" />
     <Compile Include="Model\Entities\TimeSheet\Role.cs" />
     <Compile Include="Model\Entities\TimeSheet\Upravlenie.cs" />
+    <Compile Include="Model\Interfaces\ITaskDataProvider.cs" />
+    <Compile Include="Model\Interfaces\ITimeSheetProvider.cs" />
     <Compile Include="Services\UpdateService.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Compile Include="View\Controls\HintTextBox.xaml.cs">
       <DependentUpon>HintTextBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\Converters\BooleanToVisibility.cs" />
+    <Compile Include="View\Converters\InvertBooleanConverter.cs" />
     <Compile Include="View\NewTaskWindow.xaml.cs">
       <DependentUpon>NewTaskWindow.xaml</DependentUpon>
     </Compile>

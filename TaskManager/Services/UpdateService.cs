@@ -19,7 +19,7 @@ namespace TaskManager.Services
             TryGetServerVersion();
         }
 
-        public static void UpdateIfNewer()
+        internal static void UpdateIfNewer()
         {
             if (!IsUpdatePossible())
             {

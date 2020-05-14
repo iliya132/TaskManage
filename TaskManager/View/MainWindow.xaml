@@ -13,6 +13,8 @@
     <Window.Resources>
         <local1:WidthConverter x:Key="WidthConverter"/>
         <local1:WidthConverterForText x:Key="WidthConverterForText"/>
+        <local1:BooleanToVisibility x:Key="BooleanToVisibility"/>
+        <local1:InvertBooleanConverter x:Key="InvertBooleanConverter"/>
         <Style TargetType="TextBlock" x:Key="TextStyle">
             <Setter Property="FontSize" Value="16"/>
         </Style>
@@ -70,7 +72,7 @@
             <Image Source="/TasksDK;component/Resources/img/help.png"/>
         </Button>
 
-        <TabControl Name="TabControl" Grid.Row="1">
+        <TabControl Name="TabControl" Grid.Row="1" SelectedIndex="{Binding SelectedTabTag}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectionChanged">
                     <i:InvokeCommandAction Command="{Binding TabChange}"
@@ -82,9 +84,48 @@
             <TabItem Header="Я - ответственный"/>
             <TabItem Header="Моё подразделение" Visibility="Collapsed"/>
         </TabControl>
-        <ListView Name="TaskList" Grid.Row="1" ItemsSource="{Binding CurrentlyShownTask.ChildTasks}" Margin="0,24,5,55" SelectedItem="{Binding SelectedTask}" 
+        <ListView Name="ProcessBlocksList" Grid.Row="1" Margin="0,24,5,55" ItemsSource="{Binding BlockProxies}" Panel.ZIndex="1"
+                  Visibility="{Binding Source={StaticResource Locator}, Path=Main.IsBlockSelectionActive, Converter={StaticResource BooleanToVisibility}}">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding Source={StaticResource Locator}, Path=Main.SelectBlock}"
+                                                           CommandParameter="{Binding ElementName=ProcessBlocksList, Path=SelectedItem}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+            
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid x:Name="itemsGrid" Margin="0,1,0,1" MinHeight="30">
+                        <Grid Margin="1">
+                            <ProgressBar Value="{Binding Path=DonePercent, Mode=OneWay}"
+                                         Width="{Binding ElementName=TaskList, Path=ActualWidth, Converter={StaticResource WidthConverter}, Mode=OneWay}"
+                                         BorderThickness="0"
+                                         HorizontalAlignment="Left" Opacity="0.5" Background="{x:Null}" Foreground="#FF79E062"
+                                         MinWidth="100"
+                                         />
+                            <TextBlock x:Name="BlockName" Text="{Binding Path=BlockName}"
+                                       Width="{Binding ElementName=TaskList, Path=ActualWidth, Converter={StaticResource WidthConverterForText}}"
+                                       TextWrapping="WrapWithOverflow"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" Style="{DynamicResource TextStyle}"
+                                       MinWidth="100"/>
+                            
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,5,0">
+                                <TextBlock Text="{Binding ChildTasks.Count}"
+                                           Margin="5,0,0,0"
+                                           VerticalAlignment="Center" Style="{DynamicResource TextStyle}"/>
+                                <Image Source="/TasksDK;component/Resources/img/treeelements.png" Width="15" Height="20"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        <Border BorderThickness="1" BorderBrush="Gray"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <ListView Name="TaskList" Grid.Row="1" ItemsSource="{Binding CurrentlyShownTask.ChildTasks}" Margin="0,24,5,55" SelectedItem="{Binding SelectedTask}" Panel.ZIndex="0" 
                   SelectedIndex="0" SelectionChanged="TaskList_SelectionChanged">
-
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
                     <i:InvokeCommandAction Command="{Binding Source={StaticResource Locator}, Path=Main.ShowTaskChilds}"
@@ -100,7 +141,6 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Grid x:Name="itemsGrid" Margin="0,1,0,1" MinHeight="30">
-
                         <Grid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Добавить подзадачу" 
@@ -117,7 +157,6 @@
                                           CommandParameter="{Binding}"/>
                             </ContextMenu>
                         </Grid.ContextMenu>
-
                         <Grid Margin="1">
                             <ProgressBar Value="{Binding Path=SupervisorDonePercent}"
                                          Width="{Binding ElementName=TaskList, Path=ActualWidth, Converter={StaticResource WidthConverter}, Mode=OneWay}"
@@ -150,7 +189,7 @@
 
         <Grid Grid.ColumnSpan="2">
 
-            <StackPanel Orientation="Horizontal" Margin="10">
+            <StackPanel Orientation="Horizontal" Margin="10" IsEnabled="{Binding Source={StaticResource Locator}, Path=Main.IsBlockSelectionActive, Converter={StaticResource InvertBooleanConverter}}">
                 <Button  Width="250"  Margin="5"
                          ToolTip="Добавить новую задачу"
                         Command="{Binding AddTaskCommand}" 
@@ -187,7 +226,8 @@
         <!--Панель быстрого просмотра-->
 
         <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <Grid Grid.Row="1" DataContext="{Binding Source={StaticResource Locator}, Path=Main}" Margin="0,0,25,0">
+            <Grid Grid.Row="1" DataContext="{Binding Source={StaticResource Locator}, Path=Main}" Margin="0,0,25,0"
+                  IsEnabled="{Binding Source={StaticResource Locator}, Path=Main.IsBlockSelectionActive, Converter={StaticResource InvertBooleanConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>

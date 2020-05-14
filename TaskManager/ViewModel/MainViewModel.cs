@@ -16,31 +16,23 @@ namespace TaskManager.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        #region Технические значения
+        private delegate void OnSelectionChanged();
+        private event OnSelectionChanged SelectionChanged;
+        #endregion
+
         #region Данные
-
-        //Вся информация о задачах
         TaskContext _taskContext = new TaskContext();
-
-        //Вся информация из TimeSheet
         TimeSheetContext _timeSheetContext = new TimeSheetContext();
-
-        //Все задачи в БД
         public ObservableCollection<TaskEntity> AllLoadedTasks { get; set; }
-
-        //Задача, содержащая все задачи, у которых отсутствуют родительские задачи
         private TaskEntity _nullTask { get; set; }
-
-        //Все процессы из TimeSheet
-        public List<Process> AllProcesses { get; set; }
-
-        //Подчиненные к текущему пользователю сотрудники
-        public ObservableCollection<Employee> SubordinatedEmployees { get; set; }
-
+        public List<Process> AllProcessesFromTimeSheet { get; set; }
+        public ObservableCollection<Block> AllBlocksFromTimeSheet { get; set; }
+        public ObservableCollection<BlockProxy> BlockProxies { get; set; }
+        public ObservableCollection<Employee> CurrentUserSubordinatedEmployees { get; set; }
         #endregion
 
         #region Выбранные значения
-
-        //Выделенная задача
         private TaskEntity _selectedTask = new TaskEntity();
         public TaskEntity SelectedTask
         {
@@ -51,18 +43,9 @@ namespace TaskManager.ViewModel
             set
             {
                 _selectedTask = value;
-                RaisePropertyChanged(nameof(SelectedTask));
-                RaisePropertyChanged(nameof(CurrentTaskProcesses));
-                RaisePropertyChanged(nameof(ReporterCommentEditVisibility));
-                RaisePropertyChanged(nameof(AssigneeCommentEditVisibility));
-                RaisePropertyChanged(nameof(ReporterOrAssigneeEditVisibility));
-                RaisePropertyChanged(nameof(CurrentlyShownTaskPath));
-                
+                SelectionChanged?.Invoke();
             }
         }
-
-
-
         public string CurrentlyShownTaskPath
         {
             get
@@ -88,33 +71,16 @@ namespace TaskManager.ViewModel
                 else return string.Empty;
             }
         }
-
         #endregion
 
         #region Текущие значения
-
-        //Текущая визуализированная задача (в листе на приложении отображаются дочерние элементы этой задачи)
         public TaskEntity CurrentlyShownTask { get; set; }
-
-        //Редактируемая задача
         public TaskEntity CurrentlyEditedTask { get; set; }
-
-        //Задача в буфере обмена
         private List<TaskEntity> _currentlyCuttedTasks { get; set; }
-
-        //Текущий аналитик(из TimeSheet)
         private Analytic _currentAnalytic { get; set; }
-
-        //Текущий сотрудник
         private Employee _currentEmployee { get; set; }
-
-        //Выделенные на форме добавления/редактирования аналитики
         public ObservableCollection<Employee> AddFormSelectedAnalytics { get; set; }
-
-        //Выделенные на форме добавления/редактирования процессы
         public ObservableCollection<Process> AddFormSelectedProcesses { get; set; }
-
-        //Доступные для выбора родительские задачи
         public ObservableCollection<TaskEntity> AddFormAvailableParentTasks
         {
             get
@@ -122,18 +88,10 @@ namespace TaskManager.ViewModel
                 return new ObservableCollection<TaskEntity>(AllLoadedTasks.Where(task=>task.ParentTask==null));
             }
         }
-
-        //ФИО подчинненных сотрудников
         public ObservableCollection<string> SubordinatedEmployeesNames { get; set; }
-
-        //Выделенные в ListView главной формы задачи
         private List<TaskEntity> _selectedTasks { get; set; }
-
-        //Инициатор задачи
         public string AddedTaskReporterFIO { get; set; }
-        //Ответственный в задаче
         public string AddedTaskAssigneeFIO { get; set; }
-        //Перевод в строковое представление процессов в выделенной задаче
         public string CurrentTaskProcesses
         {
             get
@@ -143,7 +101,7 @@ namespace TaskManager.ViewModel
                     StringBuilder stringBuilder = new StringBuilder();
                     foreach (ProcessProxy processProxy in SelectedTask.Processes)
                     {
-                        stringBuilder.Append($"{AllProcesses.FirstOrDefault(process => process.id == processProxy.ProcessId)}\r\n");
+                        stringBuilder.Append($"{AllProcessesFromTimeSheet.FirstOrDefault(process => process.id == processProxy.ProcessId)}\r\n");
                     }
                     return stringBuilder.ToString();
                 }
@@ -153,7 +111,7 @@ namespace TaskManager.ViewModel
                 }
             }
         }
-
+        public int SelectedTabTag { get; set; }
         private int DonePercentageCache { get; set; }
         private string ReporterCommentCache { get; set; }
         private string AssigneeCommentCache { get; set; }
@@ -198,7 +156,7 @@ namespace TaskManager.ViewModel
         {
             get
             {
-                if (CurrentlyShownTask.ParentTask != null || !CurrentlyShownTask.Name.Equals(_nullTask.Name))
+                if (!IsBlockSelectionActive)
                 {
                     return Visibility.Visible;
                 }
@@ -208,10 +166,23 @@ namespace TaskManager.ViewModel
                 }
             }
         }
+
+        private bool _isBlockSelectionActive;
+        public bool IsBlockSelectionActive
+        {
+            get { return _isBlockSelectionActive; }
+            set
+            {
+                _isBlockSelectionActive = value;
+                RaisePropertyChanged(nameof(IsBlockSelectionActive));
+                RaisePropertyChanged(nameof(GoToParentVisibility));
+            }
+        }
         #endregion
 
         #region Команды
         public RelayCommand<TaskEntity> ShowTaskChilds { get; set; }
+        public RelayCommand<BlockProxy> SelectBlock { get; private set; }
         public RelayCommand GoToParentCommand { get; set; }
         public RelayCommand<TaskEntity> AddTaskCommand { get; set; }
         public RelayCommand<TaskEntity> EditTaskCommand { get; set; }
@@ -230,11 +201,9 @@ namespace TaskManager.ViewModel
         {
             InitializeData();
             InitializeCommands();
+            InitializeEvents();
         }
 
-        /// <summary>
-        /// Инициализация переменных при загрузке приложения
-        /// </summary>
         private void InitializeData()
         {
             AllLoadedTasks = new ObservableCollection<TaskEntity>(_taskContext.Tasks.
@@ -245,8 +214,6 @@ namespace TaskManager.ViewModel
                 Include("Processes").
                 OrderBy(i => i.Name).
                 ToList());
-
-
             _nullTask = new TaskEntity
             {
                 ChildTasks = new ObservableCollection<TaskEntity>(AllLoadedTasks.Where(task => task.ParentTask == null)),
@@ -254,31 +221,28 @@ namespace TaskManager.ViewModel
             };
             AllLoadedTasks.Add(_nullTask);
             CurrentlyShownTask = _nullTask;
-
-            AllProcesses = new List<Process>(_timeSheetContext.Process);
-
+            AllProcessesFromTimeSheet = new List<Process>(_timeSheetContext.Process);
             List<Analytic> allAnalytics = _timeSheetContext.Analytics.ToList();//TODO Добавить логику отбора подчиненных сотрудников
-
-            SubordinatedEmployees = new ObservableCollection<Employee>();
-
+            CurrentUserSubordinatedEmployees = new ObservableCollection<Employee>();
             _selectedTasks = new List<TaskEntity>();
             _currentlyCuttedTasks = new List<TaskEntity>();
-
-
             foreach (Analytic analytic in allAnalytics.OrderBy(i=>i.LastName))
             {
-                SubordinatedEmployees.Add(new Employee
+                CurrentUserSubordinatedEmployees.Add(new Employee
                 {
                     AnalyticId = analytic.Id,
                     Name = $"{analytic.LastName} {analytic.FirstName} {analytic.FatherName}"
                 });
             }
-
             SubordinatedEmployeesNames = new ObservableCollection<string>(
-            SubordinatedEmployees.Select(employee => employee.Name));
-
+            CurrentUserSubordinatedEmployees.Select(employee => employee.Name));
             AddFormSelectedAnalytics = new ObservableCollection<Employee>();
             AddFormSelectedProcesses = new ObservableCollection<Process>();
+            AllBlocksFromTimeSheet = new ObservableCollection<Block>(_timeSheetContext.Blocks.ToList());
+
+            BlockProxies = new ObservableCollection<BlockProxy>();
+            FillBlocksProxyWithTasks(AllLoadedTasks);
+            IsBlockSelectionActive = true;
 
             #region Определение текущего пользователя
             _currentAnalytic = _timeSheetContext.Analytics.FirstOrDefault(analytic => analytic.userName.ToLower().Equals(Environment.UserName.ToLower()));
@@ -294,14 +258,12 @@ namespace TaskManager.ViewModel
             #endregion
         }
 
-        /// <summary>
-        /// Инициализация команд при загрузке приложения
-        /// </summary>
         private void InitializeCommands()
         {
             ShowTaskChilds = new RelayCommand<TaskEntity>(ShowTaskChildsMethod);
+            SelectBlock = new RelayCommand<BlockProxy>(SelectBlockMethod);
             GoToParentCommand = new RelayCommand(GotoParent);
-            AddTaskCommand = new RelayCommand<TaskEntity>(AddTask);
+            AddTaskCommand = new RelayCommand<TaskEntity>(AddNewTask);
             EditTaskCommand = new RelayCommand<TaskEntity>(EditTask);
             DeleteTaskCommand = new RelayCommand<TaskEntity>(DeleteTask);
             TabChange = new RelayCommand<int>(ChangeShownTask);
@@ -310,14 +272,40 @@ namespace TaskManager.ViewModel
             PasteTaskCommand = new RelayCommand<TaskEntity>(PasteTask);
             RememberOldValuesCommand = new RelayCommand<string>(RememberOldCommentValues);
             AcceptChangesOnComment = new RelayCommand<string>(AcceptChanges);
-            DeclineChangesOnComment = new RelayCommand<string>(DeclineChanges);
+            DeclineChangesOnComment = new RelayCommand<string>(RevertChanges);
         }
 
-        /// <summary>
-        /// Отклоняет изменения, внесенные в статус исполнения
-        /// </summary>
-        /// <param name="senderName"></param>
-        private void DeclineChanges(string senderName)
+        private void InitializeEvents()
+        {
+            SelectionChanged += () => RaisePropertyChanged(nameof(SelectedTask));
+            SelectionChanged += () => RaisePropertyChanged(nameof(CurrentTaskProcesses));
+            SelectionChanged += () => RaisePropertyChanged(nameof(ReporterCommentEditVisibility));
+            SelectionChanged += () => RaisePropertyChanged(nameof(AssigneeCommentEditVisibility));
+            SelectionChanged += () => RaisePropertyChanged(nameof(ReporterOrAssigneeEditVisibility));
+            SelectionChanged += () => RaisePropertyChanged(nameof(CurrentlyShownTaskPath));
+        }
+
+        private void SelectBlockMethod(BlockProxy selectedBlock)
+        {
+            ChangeShownTask(SelectedTabTag);
+            List<TaskEntity> exportValues = new List<TaskEntity>();
+            foreach (TaskEntity task in _nullTask.ChildTasks)
+            {
+                foreach (ProcessProxy process in task.Processes)
+                {
+                    Process timeSheetProcess = AllProcessesFromTimeSheet.FirstOrDefault(i => i.id == process.ProcessId);
+                    if (timeSheetProcess.Block_id == selectedBlock.BlockId)
+                    {
+                        exportValues.Add(task);
+                        break;
+                    }
+                }
+            }
+            FillNullTask(exportValues);
+            IsBlockSelectionActive = false;
+        }
+
+        private void RevertChanges(string senderName)
         {
             if (senderName.Equals("ReportCommentEditDenie"))
             {
@@ -331,19 +319,11 @@ namespace TaskManager.ViewModel
             {
                 SelectedTask.SupervisorDonePercent = DonePercentageCache;
             }
-            RaisePropertyChanged(nameof(SelectedTask));
+            SelectionChanged?.Invoke();
         }
 
-        /// <summary>
-        /// Применяет изменения вносимые в статус исполнения
-        /// </summary>
-        /// <param name="senderName"></param>
         private void AcceptChanges(string senderName)
         {
-            //Прежде чем сохранить изменения на форме - 
-            //восстанавливаем значения всех полей до редактирования, 
-            //для того что бы сохранение произошло только на том поле, 
-            //где нажата кнопка принять
             if (senderName.Equals("ReportCommentEditApprove"))
             {
                 string temp = SelectedTask.EmployeeComment;
@@ -378,7 +358,6 @@ namespace TaskManager.ViewModel
             if (sender.Equals("EditButtonReporter"))
             {
                 ReporterCommentCache = SelectedTask.SupervisorComment;
-
             }
             else if (sender.Equals("EditButtonAssignee"))
             {
@@ -416,11 +395,6 @@ namespace TaskManager.ViewModel
             }
         }
 
-
-        /// <summary>
-        /// Записать изменения в выделенных задачах
-        /// </summary>
-        /// <param name="obj"></param>
         private void StoreSelection(System.Collections.IList tasks)
         {
             _selectedTasks.Clear();
@@ -430,96 +404,38 @@ namespace TaskManager.ViewModel
             }
         }
 
-        /// <summary>
-        /// Смена вкладки на главной странице
-        /// </summary>
-        /// <param name="Tag"></param>
         private void ChangeShownTask(int Tag)
         {
+            IsBlockSelectionActive = true;
+            List<TaskEntity> SelectedTasks = new List<TaskEntity>();
+            bool filterNullTaskRequired = false;
             switch (Tag)
             {
                 //Все задачи
                 case (0):
-                    FillNullTask(_taskContext.Tasks.Where(task => task.ParentTask == null).OrderBy(task => task.Name));
+                    SelectedTasks = _taskContext.Tasks.Where(task => task.ParentTask == null).OrderBy(task => task.Name).ToList();
+                    filterNullTaskRequired = true;
                     break;
                     //Я - инициатор
                 case (1):
-                    FillNullTask(_taskContext.Tasks.
-                        Where(task =>
+                    SelectedTasks = _taskContext.Tasks.Where(task =>
                             task.Reporter.Name.Equals(_currentEmployee.Name) &&
                             (task.ParentTask == null || !task.ParentTask.Reporter.Name.Equals(task.Reporter.Name))).
-                        OrderBy(task => task.Name));
+                        OrderBy(task => task.Name).ToList();
+                    filterNullTaskRequired = false;
                     break;
                     //Я - ответственный
                 case (2):
-                    FillNullTask(_taskContext.Tasks.Where(task => task.Assignee.Name.Equals(_currentEmployee.Name)).OrderBy(task => task.Name));
-                    break;
-                case (3):
-                    List<Analytic> analyticsWithSameStruct = new List<Analytic>();
-                    List<TaskEntity> tasksWithMyStruct = new List<TaskEntity>();
-                    int currentAnalyticRole = _currentAnalytic.Role.Id;
-
-
-                    foreach (Analytic analytic in _timeSheetContext.Analytics)
-                    {
-
-                        bool DepartmentsIdentity = analytic.DepartmentsId == _currentAnalytic.DepartmentsId;
-                        bool DirectionsIdentity = analytic.DirectionsId == _currentAnalytic.DirectionsId;
-                        bool UpravlenieIdentity = analytic.UpravlenieTableId == _currentAnalytic.UpravlenieTableId;
-                        bool OtdelIdentity = analytic.OtdelTableId == _currentAnalytic.OtdelTableId;
-
-                        switch (currentAnalyticRole)
-                        {
-                            case (1):
-                                DirectionsIdentity = true;
-                                UpravlenieIdentity = true;
-                                OtdelIdentity = true;
-                                break;
-                            case (2):
-                                UpravlenieIdentity = true;
-                                OtdelIdentity = true;
-                                break;
-                            case (3):
-                                OtdelIdentity = true;
-                                break;
-                            case (5):
-                                DepartmentsIdentity = true;
-                                DirectionsIdentity = true;
-                                UpravlenieIdentity = true;
-                                OtdelIdentity = true;
-                                break;
-                            case (6):
-                                DepartmentsIdentity = false;
-                                DirectionsIdentity = false;
-                                UpravlenieIdentity = false;
-                                OtdelIdentity = false;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        foreach (Analytic item in analyticsWithSameStruct)
-                        {
-                            tasksWithMyStruct.AddRange(_taskContext.Tasks.Where(task => task.Assignee.AnalyticId == item.Id));
-                        }
-
-                        if (DepartmentsIdentity && DirectionsIdentity && UpravlenieIdentity && OtdelIdentity)
-                        {
-                            analyticsWithSameStruct.Add(analytic);
-                        }
-                    }
-
-                    FillNullTask(tasksWithMyStruct.Distinct().OrderBy(task => task.Name));
+                    SelectedTasks = _taskContext.Tasks.Where(task => task.Assignee.Name.Equals(_currentEmployee.Name)).OrderBy(task => task.Name).ToList();
+                    filterNullTaskRequired = false;
                     break;
             }
+            FillBlocksProxyWithTasks(SelectedTasks, filterNullTaskRequired);
+            FillNullTask(SelectedTasks);
             CurrentlyShownTask = _nullTask;
 
         }
 
-        /// <summary>
-        /// Заполнить нулевую задачу (при смене вкладки)
-        /// </summary>
-        /// <param name="taskSource"></param>
         private void FillNullTask(IEnumerable<TaskEntity> taskSource)
         {
             _nullTask.ChildTasks.Clear();
@@ -536,11 +452,7 @@ namespace TaskManager.ViewModel
             RaisePropertyChanged(nameof(CurrentlyShownTask));
         }
 
-        /// <summary>
-        /// Метод вызывает окно создания новой задачи, где родительской задачей будет являться parentTask
-        /// </summary>
-        /// <param name="parentTask"></param>
-        private void AddTask(TaskEntity parentTask)
+        private void AddNewTask(TaskEntity parentTask)
         {
             #region инициализация новой задачи
             CurrentlyEditedTask = new TaskEntity
@@ -569,7 +481,7 @@ namespace TaskManager.ViewModel
                 }
                 else
                 {
-                    CurrentlyEditedTask.Reporter = GetEmployee(AddedTaskReporterFIO);
+                    CurrentlyEditedTask.Reporter = GetEmployeeByName(AddedTaskReporterFIO);
                 }
 
                 //Основная задача
@@ -637,10 +549,6 @@ namespace TaskManager.ViewModel
             #endregion
         }
 
-        /// <summary>
-        /// Редактировать выбранную задачу
-        /// </summary>
-        /// <param name="editedTask"></param>
         private void EditTask(TaskEntity editedTask)
         {
             CurrentlyEditedTask = editedTask;
@@ -660,7 +568,7 @@ namespace TaskManager.ViewModel
             taskWindow.Processes.SelectedItemsOverride.Clear();
             foreach (ProcessProxy process in CurrentlyEditedTask.Processes)
             {
-                AddFormSelectedProcesses.Add(AllProcesses.FirstOrDefault(proc => proc.id == process.ProcessId));
+                AddFormSelectedProcesses.Add(AllProcessesFromTimeSheet.FirstOrDefault(proc => proc.id == process.ProcessId));
             }
             if (taskWindow.ShowDialog() == true)
             {
@@ -680,7 +588,7 @@ namespace TaskManager.ViewModel
                 }
                 else
                 {
-                    CurrentlyEditedTask.Assignee = GetEmployee(AddedTaskAssigneeFIO);
+                    CurrentlyEditedTask.Assignee = GetEmployeeByName(AddedTaskAssigneeFIO);
                 }
 
                 if (_taskContext.Employees.Any(i => i.Name.Equals(AddedTaskReporterFIO)))
@@ -689,7 +597,7 @@ namespace TaskManager.ViewModel
                 }
                 else
                 {
-                    CurrentlyEditedTask.Reporter = GetEmployee(AddedTaskReporterFIO);
+                    CurrentlyEditedTask.Reporter = GetEmployeeByName(AddedTaskReporterFIO);
                 }
 
                 foreach (ProcessProxy process in oldProcesses)
@@ -706,12 +614,7 @@ namespace TaskManager.ViewModel
             AddFormSelectedProcesses.Clear();
         }
 
-        /// <summary>
-        /// Получить Employee
-        /// </summary>
-        /// <param name="FIO">ФИО сотрудника, которого нужно найти</param>
-        /// <returns></returns>
-        private Employee GetEmployee(string FIO)
+        private Employee GetEmployeeByName(string FIO)
         {
             string lastName = FIO.Split(' ')[0];
             string firstName = FIO.Split(' ')[1];
@@ -726,10 +629,6 @@ namespace TaskManager.ViewModel
             };
         }
 
-        /// <summary>
-        /// Удалить выбранную задачу
-        /// </summary>
-        /// <param name="deletedTask"></param>
         private void DeleteTask(TaskEntity deletedTask)
         {
             string errorDescription = "Удаляемая задача содержит в себе подзадачи, которые также будут удалены. Вы уверены?";
@@ -756,10 +655,6 @@ namespace TaskManager.ViewModel
             }
         }
 
-        /// <summary>
-        /// Рекурсивный метод для удаления задачи, а также её подзадач
-        /// </summary>
-        /// <param name="task"></param>
         private void RemoveTaskRecursive(TaskEntity task)
         {
             if (task.ChildTasks.Count > 0)
@@ -777,9 +672,6 @@ namespace TaskManager.ViewModel
             _taskContext.Tasks.Remove(task);
         }
 
-        /// <summary>
-        /// Метод присваивает CurrentlyShownTask родителя текущей задачи
-        /// </summary>
         private void GotoParent()
         {
             if (CurrentlyShownTask.ParentTask != null)
@@ -794,14 +686,13 @@ namespace TaskManager.ViewModel
                 RaisePropertyChanged(nameof(CurrentlyShownTask));
                 RaisePropertyChanged(nameof(CurrentlyShownTaskPath));
 
+            } else if(CurrentlyShownTask == _nullTask)
+            {
+                IsBlockSelectionActive = true;
             }
             RaisePropertyChanged(nameof(GoToParentVisibility));
         }
 
-        /// <summary>
-        /// Перейти "Внутрь" задачи. Отображает дочерние задачи выбранной задачи
-        /// </summary>
-        /// <param name="task"></param>
         private void ShowTaskChildsMethod(TaskEntity task)
         {
             if (task.ChildTasks != null && task.ChildTasks.Count > 0)
@@ -809,6 +700,41 @@ namespace TaskManager.ViewModel
                 CurrentlyShownTask = task;
                 RaisePropertyChanged(nameof(CurrentlyShownTask));
                 RaisePropertyChanged(nameof(GoToParentVisibility));
+            }
+        }
+
+        private void FillBlocksProxyWithTasks(IEnumerable<TaskEntity> tasks, bool FilterNullTasks = true)
+        {
+            BlockProxies.Clear();
+            foreach (Block block in AllBlocksFromTimeSheet)
+            {
+                bool BlockAdded = false;
+
+                foreach (TaskEntity task in tasks)
+                {
+                    if (!FilterNullTasks || FilterNullTasks && task.ParentTask == null)
+                    {
+                        foreach (ProcessProxy processProxy in task.Processes)
+                        {
+                            Process process = AllProcessesFromTimeSheet.FirstOrDefault(i => i.id == processProxy.ProcessId);
+                            if (process.Block_id == block.Id)
+                            {
+                                if (!BlockAdded)
+                                {
+                                    BlockProxies.Add(new BlockProxy
+                                    {
+                                        BlockId = block.Id,
+                                        BlockName = block.BlockName,
+                                        ChildTasks = new List<TaskEntity>()
+                                    });
+                                }
+                                BlockAdded = true;
+                                BlockProxies[BlockProxies.Count - 1].ChildTasks.Add(task);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
